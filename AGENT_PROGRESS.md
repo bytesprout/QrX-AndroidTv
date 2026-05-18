@@ -1,7 +1,7 @@
 # QueueRx TV — Agent Progress Tracker
 
-> **Reference spec:** Parts 1–4 of the QueueRx TV Master AI Coding Agent Prompt  
-> **Parts 5 & 6** have not yet been received; this file will be updated when they arrive.
+> **Reference spec:** Parts 1–8 of the QueueRx TV Master AI Coding Agent Prompt (complete)  
+> All parts received. Implementation follows the phased plan defined in Part 8.
 
 ---
 
@@ -132,9 +132,287 @@
 
 ---
 
-## Parts 5 & 6
+## Part 5 — Queue Rendering Engine, Doctor & Pharmacy Boards, Token System UI, Ticker, TTS, Audio
 
-> ⏳ Not yet received. Will be added when the user provides them.
+### Queue Rendering
+
+| Area | Status | Notes |
+|------|--------|-------|
+| `QueueRenderingCoordinator` | ❌ | Orchestrates doctor queues, pharmacy queues, token transitions, animations |
+| Token state model: WAITING / CALLED / ACTIVE / COMPLETED / NO_SHOW / REFERRED / PREPARING / READY / COLLECTED / EMERGENCY | ✅ | `QueueStateMachine` covers these states; UI rendering not yet done |
+| Visual priority hierarchy (EMERGENCY → CALLED → ACTIVE → READY → WAITING) | ❌ | |
+| Token color system (accessible, color-blindness safe) | ❌ | |
+| `TokenAttentionAnimator` (flash on CALLED / READY / EMERGENCY, 5–10 s timeout) | ❌ | |
+| AnimatedContent / Crossfade / updateTransition token transitions (no hard replacements) | ❌ | |
+
+### Doctor Queue Board (`DoctorQueueBoard`)
+
+| Area | Status | Notes |
+|------|--------|-------|
+| `DoctorQueueBoard` composable | ❌ | |
+| NOW SERVING section — dominant visual, glow + pulse + scale animation | ❌ | |
+| UPCOMING section (A-103, A-104, A-105) | ❌ | |
+| RECENTLY CALLED section | ❌ | |
+| Token number — huge typography | ❌ | |
+| Room number — large, high-contrast | ❌ | |
+| Doctor name — readable | ❌ | |
+| Department — secondary | ❌ | |
+| Token change: flash transition + audio chime + TTS | ❌ | |
+| Multi-department side-by-side view (Cardiology, Ortho, General, Paediatrics) | ❌ | |
+
+### Pharmacy Queue Board (`PharmacyQueueBoard`)
+
+| Area | Status | Notes |
+|------|--------|-------|
+| `PharmacyQueueBoard` composable | ❌ | |
+| PREPARING section | ❌ | |
+| READY section (highlight + glow + pulse + border flash on transition) | ❌ | |
+| COUNTER section | ❌ | |
+| PREPARING → READY transition: highlight + glow + chime + TTS | ❌ | |
+
+### Announcement & TTS Engine
+
+| Area | Status | Notes |
+|------|--------|-------|
+| `AnnouncementCoordinator` | ❌ | |
+| `SpeechQueueManager` (priority queue: Emergency → Doctor Call → Pharmacy Ready → Ticker Voice) | ❌ | |
+| TTS language support: Malayalam / English / Hindi | ❌ | |
+| Smart token pronunciation ("A One Zero Two", not "A-102") | ❌ | |
+| Doctor call announcement template | ❌ | |
+| Pharmacy ready announcement template | ❌ | |
+| Emergency TTS announcement (highest priority, interrupts all) | ❌ | |
+| No overlapping speech enforcement | ❌ | |
+
+### Audio System
+
+| Area | Status | Notes |
+|------|--------|-------|
+| `AudioDuckingCoordinator` (media → 15% during TTS, smooth restore) | ❌ | |
+| Chime engine (play hospital notification chime before announcements) | ❌ | |
+| Chime tenant-configurable | ❌ | |
+| Audio settings: mute media / mute announcements / TTS volume / media volume / emergency volume | ❌ | |
+| Quiet hours support (e.g. 10 PM–6 AM, lower volume automatically) | ❌ | |
+
+### Ticker Engine (`HospitalTickerRenderer`)
+
+| Area | Status | Notes |
+|------|--------|-------|
+| `HospitalTickerRenderer` composable | ❌ | |
+| Content types: hospital announcements, RSS, queue notices, health tips, emergency notices | ❌ | |
+| Ticker speed modes: slow / normal / fast (configurable) | ❌ | |
+| Multilingual ticker: Malayalam / Hindi / English / mixed | ❌ | |
+| Ticker priority: Emergency → Hospital Notice → Queue Updates → Health Awareness → RSS | ❌ | |
+
+### Diagnostics Additions (Part 5)
+
+| Area | Status | Notes |
+|------|--------|-------|
+| `DisplayScreenshotManager` (capture current screen, upload securely for admin debugging) | ❌ | |
+| Display health score (queue freshness + player health + SSE + WS + FPS → % score) | ❌ | |
+| Queue latency target < 1 second (doctor CALL NEXT → TV update) | ❌ | |
+| Fallback mode UI ("Queue temporarily unavailable / Displaying last synced data") | ❌ | |
+
+---
+
+## Part 6 — Kiosk Hardening, Device Provisioning, Enterprise Activation, OTA
+
+### Kiosk Mode
+
+| Area | Status | Notes |
+|------|--------|-------|
+| `KioskCoordinator` | ❌ | Lock task mode, app pinning, exit prevention, auto-recovery |
+| Mode 1 — Device Owner / Full Enterprise Lock Task (disable launcher, settings, notifications, status bar) | ❌ | |
+| Mode 2 — Screen Pinning Fallback (for unsupported TVs) | ❌ | |
+| Device Owner Mode / DPC provisioning support | ❌ | |
+| `BootRecoveryReceiver` (auto-launch after reboot / power outage / crash) | ❌ | |
+| `AppRecoveryManager` (uncaught crash → capture logs → persist state → restart, < 5 s downtime) | ❌ | |
+| `QueueRxWatchdog` (monitors player, UI, ANR risk, websocket, SSE, memory; auto-heals) | ❌ | |
+
+### Provisioning System
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Splash → Provision Check → Activation → Config Sync → Ready flow | 🔲 | Module stubs exist; logic not implemented |
+| **Method 1 — QR Activation** (`queuerx://activate?token=xxxx`) | 🔲 | `feature-provisioning` stub |
+| **Method 2 — Activation Code** (manual code entry e.g. `HSP-9823`) | ❌ | |
+| **Method 3 — MAC Address Registration** (enterprise bulk deployment) | ❌ | |
+| `DeviceRegistrationCoordinator` (register deviceId, name, MAC, model, OS, appVersion) | ❌ | |
+| Device types: WAITING_HALL / RECEPTION / PHARMACY / DOCTOR_ROOM / EMERGENCY / CUSTOM | ✅ | `DisplayMode` enum covers these roles |
+| Offline provisioning: USB config import / QR local config / LAN provisioning | ❌ | |
+
+### Remote Configuration
+
+| Area | Status | Notes |
+|------|--------|-------|
+| `ConfigurationSyncManager` (download → checksum → persist → apply; rollback on failure) | ❌ | |
+| Config versioning — only update changed sections | ❌ | |
+| Full remote control of layout, queues, ticker, playlists, branding, colors, volume, TTS language | ❌ | |
+| Remote commands: RESTART_APP / REBOOT_DEVICE / REFRESH_LAYOUT / CLEAR_CACHE / RUN_TEST / UPLOAD_LOGS / TAKE_SCREENSHOT / MUTE / UNMUTE / FORCE_PLAYLIST_REFRESH | ❌ | |
+
+### Maintenance Panel
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Hidden entry — tap top-left 7 times | ❌ | |
+| PIN dialog (4-digit / 6-digit / admin override) | ❌ | |
+| `MaintenanceCenter` composable with full feature list | ❌ | |
+| `ConnectivityDiagnostics` (test internet / API / WebSocket / SSE / DNS / CDN / IPTV stream) | ❌ | |
+| Device health panel (CPU, RAM, storage, uptime, realtime status, FPS, network — live) | ❌ | |
+| PIN rate limiting (5 failed attempts → 5-minute lock) | ❌ | |
+
+### OTA Update System
+
+| Area | Status | Notes |
+|------|--------|-------|
+| `OtaCoordinator` (forced / staged / silent / maintenance-window updates) | ❌ | |
+| Update strategy: download APK → verify checksum → install → health validation → rollback | ❌ | |
+| App version management (current / latest / minimum; block deprecated) | ❌ | |
+| Maintenance windows (e.g. 2 AM–4 AM) | ❌ | |
+
+### Security & Storage (Part 6)
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Encrypted DataStore for all secrets (auth token, refresh token, device keys) | ❌ | |
+| `StorageCleanupManager` (auto-clean at 80% threshold: old logs, expired media, temp, stale cache) | ❌ | |
+| Factory reset recovery → reprovision mode (no crash) | ❌ | |
+| Multi-hospital white-label (logo, colors, fonts, wallpaper downloaded remotely) | ❌ | |
+| Enterprise bulk deployment support (50/100/500 TVs, zero manual setup) | ❌ | |
+
+---
+
+## Part 7 — Telemetry, Diagnostics, Watchdogs, Crash Recovery, Performance, Fire TV
+
+### Observability Architecture
+
+| Area | Status | Notes |
+|------|--------|-------|
+| `ObservabilityCoordinator` | ❌ | Umbrella coordinator for telemetry, diagnostics, health reporting |
+| Device telemetry heartbeat (30 s → `/device/telemetry`) with full payload | 🔲 | `HeartbeatMessage` model defined; HTTP send not wired |
+| `HealthScoreCalculator` (player + queue freshness + stream + network + FPS + memory + WS + SSE + ANR → % score) | ❌ | |
+| `QueueFreshnessMonitor` (> 60 s without update → show warning, never silently stale) | ❌ | |
+| `StreamHealthMonitor` (detect frozen frames, endless buffering, dead decoder, stalled IPTV; restart source) | ❌ | |
+
+### Memory & Performance Monitoring
+
+| Area | Status | Notes |
+|------|--------|-------|
+| `MemoryPressureMonitor` (70% = warning, 85% = cleanup, 95% = emergency recovery) | ❌ | |
+| Automatic cleanup on memory pressure (image cache, player buffers, temp resources, surfaces) | ❌ | |
+| ANR prevention — no network/DB/JSON on main thread; all Dispatchers.IO | ❌ | Architecture principle set; enforcement pending |
+| Frame rate monitor (target 55–60 FPS, alert < 45 FPS) | ❌ | |
+
+### Crash & Recovery
+
+| Area | Status | Notes |
+|------|--------|-------|
+| `CrashReportingProvider` abstraction (pluggable: Firebase Crashlytics / Sentry / custom backend) | ❌ | |
+| Crash capture (stack trace, logs, player state, queue state, device info, memory, network) | ❌ | |
+| `SafeRestartManager` (capture state → persist → restart → restore, < 5 s downtime) | ❌ | |
+| `SubsystemWatchdog` with escalation hierarchy (subsystem → feature → app → device reboot) | ❌ | |
+| Player failure recovery (decoder crash, surface loss, stalled buffer → recreate player, restore stream) | ❌ | |
+
+### Diagnostics Tools (Part 7)
+
+| Area | Status | Notes |
+|------|--------|-------|
+| `DiagnosticScreenshotManager` (admin TAKE_SCREENSHOT → upload screenshot) | ❌ | |
+| `LogUploadManager` (player, queue, network, crash, WS, SSE logs → secure upload) | ❌ | |
+| Diagnostic dashboard in maintenance panel (all health metrics, live updating) | ❌ | |
+
+### Fire TV Compatibility
+
+| Area | Status | Notes |
+|------|--------|-------|
+| FireStick Lite / FireStick 4K / Fire TV Cube support | ❌ | |
+| Fire TV input handling (DPAD, CENTER, MENU, BACK, PLAY_PAUSE) | ❌ | |
+| Fire TV aggressive background kill recovery | ❌ | |
+| Fire TV quirk safeguards (media keys, focus differences, storage limits) | ❌ | |
+
+### Low-End STB Optimization
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Optimization for 2 GB RAM / weak CPU / poor GPU / slow storage | ❌ | |
+| GPU safety rules (no heavy blur, excessive shadows, massive gradients, expensive shaders) | ❌ | |
+| Bitmap optimization (resize, preload carefully, no giant textures) | ❌ | |
+| Compose optimization (stable params, immutable models, `remember`, `derivedStateOf`, `key()`, no recompose storms) | ❌ | |
+| Network optimization (retry, timeout, cache, fallback, request coalescing) | ❌ | |
+| Battery/power event handling (sleep, wake, HDMI disconnect, ethernet reconnect → auto recover) | ❌ | |
+
+### Performance Targets
+
+| Target | Requirement | Status |
+|--------|-------------|--------|
+| App startup | < 4 seconds | ❌ |
+| Queue update latency | < 1 second | ❌ |
+| Screen switch | < 300 ms | ❌ |
+| Player recovery | < 5 seconds | ❌ |
+| App uptime goal | 30+ days without manual intervention | ❌ |
+
+---
+
+## Part 8 — Testing, CI/CD, Security, Release, Acceptance Criteria
+
+### Testing
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Unit tests — JUnit5 + MockK + Turbine + Truth | 🔲 | JUnit5 configured; MockK/Turbine/Truth not yet added |
+| Unit coverage target ≥ 80% | ❌ | Current coverage estimated < 20% |
+| SSE tests (reconnect, Last-Event-ID, replay, duplicates, malformed, network drop) | ✅ | Backoff + dedup tests passing |
+| WebSocket tests (heartbeat, reconnect, remote commands, degraded mode) | ❌ | |
+| Player tests (HLS, DASH, IPTV, MP4, RTSP, YouTube, HDMI-In; bad stream, decoder crash, buffer, network loss) | ❌ | |
+| Room database tests (migrations, corruption recovery, persistence, offline restore) | ❌ | |
+| Compose UI tests (focus navigation, D-pad, remote controls, screen transitions, maintenance mode) | ❌ | |
+| Fire TV device tests (focus, playback, process death, reconnect, remote keys) | ❌ | |
+| Low-end TV tests (2 GB RAM, stable playback, no OOM, no ANR) | ❌ | |
+| 72-hour soak test (zero crash, memory stable, player uptime, queue updates, FPS) | ❌ | |
+| Network failure tests (WiFi loss, ethernet unplug, DNS fail, backend outage) | ❌ | |
+| Offline mode tests (cached queue render, cached media, emergency persistence, no blank screens) | ❌ | |
+
+### CI/CD Pipeline
+
+| Area | Status | Notes |
+|------|--------|-------|
+| GitHub Actions CI pipeline | ❌ | |
+| Pipeline stages: Lint → Unit Tests → Integration Tests → Build APK → Security Scan → Artifact Upload → Release | ❌ | |
+| Static analysis: Detekt + KtLint + Android Lint | ❌ | |
+
+### Security Requirements (Part 8)
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Encrypted DataStore (never plain text token storage) | ❌ | |
+| HTTPS only + TLS + certificate validation | ❌ | |
+| Signed remote command authorization (device + tenant validation) | ❌ | |
+| Maintenance panel rate limiting (5 failed → 5-min lock) | ❌ | |
+| Screenshot encrypted upload + signed request + access control | ❌ | |
+
+### Release Strategy
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Build variants: debug / qa / stage / release | ❌ | |
+| Semantic versioning (1.0.0 format + build number + release notes) | ❌ | |
+| Internal / Staging / Production build targets | 🔲 | Environment enum exists (DEV/STAGE/PROD) |
+| Code quality rules enforced (SOLID, Clean Arch, no god classes, no business logic in composables) | 🔲 | Architecture enforced by structure; linter not yet configured |
+
+### Phased Implementation Plan Status
+
+| Phase | Goal | Status |
+|-------|------|--------|
+| Phase 1 | Project setup (arch, Gradle, Hilt, navigation, theme) → app boots | 🔲 structure done; Android SDK / Compose / Hilt not wired |
+| Phase 2 | Provisioning (QR activation, activation code, registration) | 🔲 module stub |
+| Phase 3 | Networking (Retrofit, auth, SSE, WebSocket) | 🔲 SSE/WS models done; HTTP client not wired |
+| Phase 4 | Room + cache (entities, DAOs, repositories) | 🔲 entities done; DAOs not implemented |
+| Phase 5 | Media engine (ExoPlayer, IPTV, HLS, playlist) | 🔲 coordinator baseline; ExoPlayer not integrated |
+| Phase 6 | Queue rendering (doctor board, pharmacy board, animations) | ❌ |
+| Phase 7 | TTS + ticker | ❌ |
+| Phase 8 | Kiosk hardening | ❌ |
+| Phase 9 | Diagnostics + telemetry | ❌ |
+| Phase 10 | Optimization (low-end TV, Fire TV) | ❌ |
+| Phase 11 | QA & 72-hour soak test | ❌ |
 
 ---
 
@@ -182,12 +460,18 @@
 
 | Layer | Total Items | ✅ Done | 🔲 Scaffolded | ❌ Pending |
 |-------|------------|---------|--------------|-----------|
-| Project/Build | 8 | 5 | 1 | 2 |
+| Part 1 — Foundation | 8 | 5 | 1 | 2 |
 | Part 2 — UI & Nav | 24 | 2 | 18 | 4 |
 | Part 3 — Realtime & DB | 24 | 10 | 2 | 12 |
 | Part 4 — Media | 30 | 4 | 0 | 26 |
-| Startup Flow | 8 | 0 | 5 | 3 |
-| **Total** | **94** | **21 (22%)** | **26 (28%)** | **47 (50%)** |
+| Part 5 — Queue Rendering & TTS | 37 | 1 | 0 | 36 |
+| Part 6 — Kiosk & Provisioning | 28 | 1 | 3 | 24 |
+| Part 7 — Telemetry & Fire TV | 25 | 0 | 1 | 24 |
+| Part 8 — Testing & CI/CD | 25 | 1 | 3 | 21 |
+| Startup Flow / Display Modes | 15 | 0 | 9 | 6 |
+| **Total** | **216** | **24 (11%)** | **37 (17%)** | **155 (72%)** |
+
+> ℹ️ The jump in total items (94 → 216) reflects Parts 5–8 being fully catalogued for the first time. Prior summary only tracked Parts 1–4.
 
 ---
 
